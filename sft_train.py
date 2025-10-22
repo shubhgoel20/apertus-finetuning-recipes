@@ -40,14 +40,13 @@ def main(script_args, training_args, model_args):
     # ------------------------
     #Set base directory to store model
     store_base_dir = "./" #os.getenv("STORE")
-    
-    model_kwargs = dict(
-        torch_dtype=model_args.torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True,
-    )
+
 
     model = AutoModelForCausalLM.from_pretrained(
-        model_args.model_name_or_path, **model_kwargs
+        model_args.model_name_or_path,
+        torch_dtype=model_args.dtype,
+        use_cache=False if training_args.gradient_checkpointing else True,
+        attn_implementation=model_args.attn_implementation,   # <-- ensure it’s used
     )
 
     tokenizer = AutoTokenizer.from_pretrained(
