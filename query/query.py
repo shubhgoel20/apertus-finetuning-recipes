@@ -25,7 +25,7 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 # 4. Prepare Input
-prompt = "Answer this question truthfully and in a coincise manner: What is suggested by high PCWP worsening after IVF and arrhythmias?"
+prompt = "Type your input prompt here"
 messages = [
     {"role": "user", "content": prompt}
 ]
