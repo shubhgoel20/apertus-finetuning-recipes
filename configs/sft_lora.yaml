@@ -4,7 +4,7 @@ attn_implementation:  kernels-community/vllm-flash-attn3
 dtype: bfloat16
 
 # Dataset
-dataset_name: HuggingFaceH4/Multilingual-Thinking
+dataset_name: medalpaca/medical_meadow_medical_flashcards
 dataset_num_proc: 12
 
 # Hyperparameters
@@ -30,6 +30,6 @@ lr_scheduler_kwargs:
   min_lr_rate: 0.1
 
 # Output & logging
-output_dir: Apertus-FT/output/apertus_lora
+output_dir: /users/$USER/scratch/apertus/output/apertus_lora
 report_to: "none" 
 seed: 42
