@@ -5,6 +5,9 @@ dtype: bfloat16
 
 # Dataset
 dataset_name: medalpaca/medical_meadow_medical_flashcards
+dataset_config: null  # This dataset has no subsets/configs
+dataset_train_split: train  # The split name to use for training
+dataset_test_split: train  # Use train split since there's no test split
 dataset_num_proc: 12
 
 # Hyperparameters
