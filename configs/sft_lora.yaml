@@ -1,13 +1,10 @@
 # Model
 model_name_or_path: swiss-ai/Apertus-8B-Instruct-2509
-attn_implementation:  kernels-community/vllm-flash-attn3
+attn_implementation:  flash_attention_2
 dtype: bfloat16
 
 # Dataset
-dataset_name: medalpaca/medical_meadow_medical_flashcards
-dataset_config: null  # This dataset has no subsets/configs
-dataset_train_split: train  # The split name to use for training
-dataset_test_split: train  # Use train split since there's no test split
+dataset_name: HuggingFaceH4/Multilingual-Thinking
 dataset_num_proc: 12
 
 # Hyperparameters
@@ -33,6 +30,6 @@ lr_scheduler_kwargs:
   min_lr_rate: 0.1
 
 # Output & logging
-output_dir: /users/$USER/scratch/apertus/output/apertus_lora
+output_dir: /users/mmeciani/scratch/apertus/output
 report_to: "none" 
 seed: 42

@@ -6,33 +6,61 @@
 #SBATCH --nodes=3
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=4
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=256G
+#SBATCH --cpus-per-task=72
 #SBATCH --output=apertus_finetune_%j.log
 #SBATCH --error=apertus_finetune_%j.err
 
-# HF cache
-export HF_HOME="/users/$USER/scratch/apertus/huggingface_cache"
+#SBATCH --uenv=pytorch/v2.6.0:v1
+#SBATCH --view=default
 
-# Conda environment
-source /users/$USER/miniconda3/etc/profile.d/conda.sh
-conda activate apertus_env
+# Disable Slurm CPU binding to prevent "outside of job step allocation" errors
+export SLURM_CPU_BIND="none"
 
-# Multi-node setup
-ACCEL_PROCS=$(( SLURM_NNODES * SLURM_GPUS_PER_NODE ))
-MAIN_ADDR=$(scontrol show hostnames $SLURM_NODELIST | head -n1)
-MAIN_PORT=12802
+# Set HF Cache to scratch (optional but good practice)
+export HF_HOME="/users/mmeciani/scratch/apertus/huggingface_cache"
+export TRITON_CACHE_DIR="/users/mmeciani/scratch/apertus/triton_cache"
+
+# ---------------------------------------------------------
+# 2. Network Setup for Distributed Training
+# ---------------------------------------------------------
+MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+MASTER_PORT=29500
+
+echo "Master node: $MASTER_ADDR"
+echo "Master port: $MASTER_PORT"
+
+# ---------------------------------------------------------
+# 3. Execution
+# ---------------------------------------------------------
+# Explicitly set the config path
+CONFIG_FILE="configs/zero3.yaml" # Use zero3.yaml (or zero3_multinode.yaml if you have created it)
+DATASET_NAME="medalpaca_formatted" # Use the local dataset we fixed earlier
+
+# Calculate total processes (3 nodes * 4 GPUs = 12 processes)
+GPUS_PER_NODE=4
+NUM_PROCESSES=$((SLURM_NNODES * GPUS_PER_NODE))
+
+echo "Launching $NUM_PROCESSES processes across $SLURM_NNODES nodes..."
+
+# We use 'srun' to launch the training script on every node.
+# Note: We activate the venv INSIDE the srun command to ensure it exists on worker nodes.
+
 
 # Launch training
-CMD="accelerate launch \
-    --config_file /users/$USER/scratch/apertus/configs/zero3_multinode.yaml \
-    --num_machines=$SLURM_NNODES \
-    --num_processes=$((SLURM_NNODES * SLURM_GPUS_PER_NODE)) \
-    --machine_rank=$SLURM_PROCID \
-    --main_process_ip=$MAIN_ADDR \
-    --main_process_port=$MAIN_PORT \
-    /users/$USER/scratch/apertus/sft_train.py \
-    --config /users/$USER/scratch/apertus/configs/sft_lora.yaml \
-    --dataset_name medalpaca/medical_meadow_medical_flashcards"
+CMD="source .venv/bin/activate && \
+    export PYTHONPATH=$PWD/.venv/lib/python3.13/site-packages:\$PYTHONPATH && \
+    echo 'Node \${SLURM_PROCID} launched' && \
+    accelerate launch \
+    --config_file $CONFIG_FILE \
+    --num_processes $NUM_PROCESSES \
+    --num_machines $SLURM_NNODES \
+    --machine_rank \$SLURM_PROCID \
+    --main_process_ip $MASTER_ADDR \
+    --main_process_port $MASTER_PORT \
+    --mixed_precision bf16 \
+    --dynamo_backend no \
+    sft_train.py \
+    --config configs/sft_lora.yaml \
+    --ddp_timeout 1800"
 
 srun bash -c "$CMD"
