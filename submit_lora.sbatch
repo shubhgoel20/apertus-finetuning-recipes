@@ -9,16 +9,21 @@
 #SBATCH --cpus-per-task=72
 #SBATCH --output=apertus_finetune_%j.log
 #SBATCH --error=apertus_finetune_%j.err
-
 #SBATCH --uenv=pytorch/v2.6.0:v1
 #SBATCH --view=default
 
+# ---------------------------------------------------------
+# 1. Environment Setup
+# ---------------------------------------------------------
 # Disable Slurm CPU binding to prevent "outside of job step allocation" errors
 export SLURM_CPU_BIND="none"
 
 # Set HF Cache to scratch (optional but good practice)
-export HF_HOME="/users/mmeciani/scratch/apertus/huggingface_cache"
-export TRITON_CACHE_DIR="/users/mmeciani/scratch/apertus/triton_cache"
+export HF_HOME="/path/to/huggingface_cache"
+export TRITON_CACHE_DIR="/path/to/triton_cache"
+
+# Export python path if not done manually before
+# export PYTHONPATH=$PWD/.venv/lib/python3.13/site-packages:$PYTHONPATH
 
 # ---------------------------------------------------------
 # 2. Network Setup for Distributed Training
@@ -33,18 +38,14 @@ echo "Master port: $MASTER_PORT"
 # 3. Execution
 # ---------------------------------------------------------
 # Explicitly set the config path
-CONFIG_FILE="configs/zero3.yaml" # Use zero3.yaml (or zero3_multinode.yaml if you have created it)
-DATASET_NAME="medalpaca_formatted" # Use the local dataset we fixed earlier
+CONFIG_FILE="configs/zero3_multinode.yaml"       # Use zero3.yaml (or zero3_multinode.yaml if you have created it)
+DATASET_NAME="dataset-name"               
 
 # Calculate total processes (3 nodes * 4 GPUs = 12 processes)
 GPUS_PER_NODE=4
 NUM_PROCESSES=$((SLURM_NNODES * GPUS_PER_NODE))
 
 echo "Launching $NUM_PROCESSES processes across $SLURM_NNODES nodes..."
-
-# We use 'srun' to launch the training script on every node.
-# Note: We activate the venv INSIDE the srun command to ensure it exists on worker nodes.
-
 
 # Launch training
 CMD="source .venv/bin/activate && \
