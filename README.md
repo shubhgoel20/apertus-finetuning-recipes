@@ -1,146 +1,134 @@
-# Apertus Fine-Tuning Recipes
+# Apertus Fine-Tuning on Clariden (GH200 / uenv)
 
-This repository provides fine-tuning recipes for Swiss AI’s Apertus language models (8B and 70B), supporting both full-parameter and LoRA-based approaches.
-Built on top of popular frameworks including TRL, Accelerate, and Transformers, the recipes are optimized for efficient training on modern GPUs.
-LoRA fine-tuning of the 8B model can be done on a single 40 GB GPU, while training the 70B model requires a multi-GPU setup.
+This guide documents the specific steps required to run the Apertus fine-tuning recipes on the CSCS Clariden cluster using the uenv software stack (NVIDIA GH200).
 
+## 1. Initial Setup (One-Time)
 
-## 🔗 Resources
-- [Apertus 8B Instruct](https://huggingface.co/swiss-ai/Apertus-8B-Instruct-2509)  
-- [Apertus 70B Instruct](https://huggingface.co/swiss-ai/Apertus-70B-Instruct-2509)  
-- [Full collection on HF](https://huggingface.co/collections/swiss-ai/apertus-llm-68b699e65415c231ace3b059)  
+### A. Start an Interactive Session
 
----
-
-## ⚡ Quickstart
+Do not run installation steps on the login node. Always acquire a compute node first.
 
 ```bash
-# 1. Create and activate environment
-uv venv apertus --python 3.10 && source apertus/bin/activate
+srun --nodes=1 --account=large-sc-2 --time=01:00:00 --pty bash
+```
 
-# 2. Install PyTorch (CUDA 12.8 wheels)
-uv pip install torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/test/cu128
+### B. Pull the PyTorch Image
 
-# 3. Install project requirements
-uv pip install -r requirements.txt
+Download the specific image optimized for GH200 (version v2.6.0:v1 as of April 2025). *Only needed once.*
 
-# 4. Launch LoRA training on a single GPU
+```bash
+uenv image pull pytorch/v2.6.0:v1
+```
+
+### C. Start the Environment
+
+Start the container with the default view.
+
+```bash
+uenv start pytorch/v2.6.0:v1 --view=default
+```
+
+### D. Create Virtual Environment
+
+Create a venv that inherits system packages (PyTorch, drivers) but allows local installations.
+
+```bash
+// Create venv (only once)
+python -m venv .venv --system-site-packages
+
+// Activate venv (every session)
+source .venv/bin/activate
+```
+
+## 2. Dependency Installation
+
+**CRITICAL:** Do not simply run `pip install -r requirements.txt`. Modify the file first to avoid breaking the system PyTorch.
+
+### A. Edit `requirements.txt`
+
+Open `requirements.txt` and comment out or remove the following lines:
+
+```
+torch
+torchvision
+torchaudio
+flash-attn
+```
+
+### B. Install Libraries
+
+Run the following commands in order:
+
+```bash
+# 1. Install modified requirements
+pip install -r requirements.txt
+
+# 2. Force install transformers to local venv
+pip install --ignore-installed transformers
+pip install deprecated
+```
+
+## 3. Configuration Fixes
+
+The default config uses an experimental attention kernel that fails on this cluster. Switch to standard Flash Attention 2.
+
+- Open your config file (e.g., `configs/sft_lora.yaml` or `configs/sft_full.yaml`).
+- Find the `attn_implementation` line.
+- Change it to:
+
+```yaml
+attn_implementation: "flash_attention_2"
+```
+
+## 4. Running Training
+
+Python may prioritize the system `transformers` over your local installation. Export `PYTHONPATH` before every run.
+
+### Option A: Interactive Run
+
+```bash
+source .venv/bin/activate
+export PYTHONPATH=$PWD/.venv/lib/python3.13/site-packages:$PYTHONPATH
 python sft_train.py --config configs/sft_lora.yaml
-````
-
----
-
-## Model Selection
-
-All scripts work with both 8B and 70B versions. Switch model size by editing `model_path`:
-
-```python
-# Default: 8B
-model_path = "swiss-ai/Apertus-8B-Instruct-2509"
-
-# To use 70B:
-# model_path = "swiss-ai/Apertus-70B-Instruct-2509"
 ```
 
-Device mapping and configuration are handled automatically.
+### Option B: Batch Job (SLURM)
 
----
-
-## Fine-Tuning
-
-### Full-parameter training (4 GPUs)
+Create a file `submit_clariden.slurm`:
 
 ```bash
-# Standard attention
-accelerate launch --config_file configs/zero3.yaml sft_train.py --config configs/sft_full.yaml
+#!/bin/bash
+#SBATCH --job-name=apertus-ft
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=04:00:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
 
-# With FlashAttention3
-accelerate launch --config_file configs/zero3.yaml sft_train.py \
-    --config configs/sft_full.yaml \
-    --attn_implementation kernels-community/vllm-flash-attn3
-```
+# 1. Mount uenv
+export UENV_MOUNT_LIST="/user-environment/linux-sles15-aarch64/pytorch/v2.6.0-v1:/user-environment"
+export UENV_VIEW="default"
 
-### LoRA training (1 GPU)
+# 2. Activate Environment
+source .venv/bin/activate
 
-```bash
+# 3. CRITICAL: Fix Path Priority
+export PYTHONPATH=$PWD/.venv/lib/python3.13/site-packages:$PYTHONPATH
+
+# 4. Debug info
+echo "Using python: $(which python)"
+echo "Transformers path: $(python -c 'import transformers; print(transformers.__file__)')"
+
+# 5. Run Training
 python sft_train.py --config configs/sft_lora.yaml
+# OR for Full Fine-Tuning:
+# accelerate launch --config_file configs/zero3.yaml sft_train.py --config configs/sft_full.yaml
 ```
 
----
-
-### Multi-Node training (3 nodes x 4 GPUs)
+Submit the job:
 
 ```bash
-# Standard attention
-bash --nodes=3 submit_multinode.sh
-```
-## Customization
-
-You can adjust datasets and hyperparameters either by editing the config YAMLs (`sft_lora.yaml`, `sft_full.yaml`) or passing overrides directly:
-
-```bash
-accelerate launch --config_file configs/zero3.yaml \
-    sft_train.py --config configs/sft_full.yaml \
-    --dataset_name YOUR_DATASET
+sbatch submit_clariden.slurm
 ```
 
----
-
-## Model Saving
-
-
-After training completes, your fine-tuned models are saved in the following locations:
-
-- **LoRA Training**: `Apertus-FT/output/apertus_lora/`
-- **Full Fine-tuning**: `Apertus-FT/output/apertus_full/`
-
-Each output directory contains:
-- `adapter_model.safetensors` (LoRA only) - The LoRA adapter weights
-- `adapter_config.json` (LoRA only) - LoRA configuration
-- `training_args.bin` - Training arguments used
-- `trainer_state.json` - Training state and metrics
-- `tokenizer.json`, `tokenizer_config.json` - Tokenizer files
-- `config.json` - Model configuration
-
----
-
-## Using Your Fine-tuned Models
-
-#### For LoRA Adapters
-
-LoRA adapters are lightweight and can be loaded with the base model:
-
-```python
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
-
-# Load base model and tokenizer
-base_model = AutoModelForCausalLM.from_pretrained("swiss-ai/Apertus-8B-Instruct-2509")
-tokenizer = AutoTokenizer.from_pretrained("swiss-ai/Apertus-8B-Instruct-2509")
-
-# Load LoRA adapter
-model = PeftModel.from_pretrained(base_model, "Apertus-FT/output/apertus_lora/")
-
-# For inference, you can merge the adapter (optional)
-model = model.merge_and_unload()
-```
-
-#### For Full Fine-tuned Models
-
-Full fine-tuned models can be loaded directly:
-
-```python
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-# Load your fine-tuned model
-model = AutoModelForCausalLM.from_pretrained("Apertus-FT/output/apertus_full/")
-tokenizer = AutoTokenizer.from_pretrained("Apertus-FT/output/apertus_full/")
-```
-
----
-
-## Contributors
-
-- [Kaustubh Ponkshe](https://kaustubhp11.github.io/)
-- [Raghav Singhal](https://raghavsinghal10.github.io/)
