@@ -1,6 +1,6 @@
 # Model
 model_name_or_path: swiss-ai/Apertus-8B-Instruct-2509
-attn_implementation:  flash_attention_2
+attn_implementation:  flash_attention_2    # Changed here to make it work on Clariden
 dtype: bfloat16
 
 # Dataset
