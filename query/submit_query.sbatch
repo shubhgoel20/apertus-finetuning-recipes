@@ -13,7 +13,7 @@
 #SBATCH --uenv=pytorch/v2.6.0:v1     # This loads your base PyTorch environment
 
 # Define project directory
-PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
+PROJECT_DIR="/path/to/project/dir"
 
 # Set environment variables for Hugging Face cache 
 export HF_HOME="$PROJECT_DIR/huggingface_cache"
