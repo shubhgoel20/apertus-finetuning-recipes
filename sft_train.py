@@ -22,7 +22,7 @@ accelerate launch \
 
 import os
 
-os.environ["HF_HOME"] = "/users/mmeciani/scratch/apertus-project/huggingface_cache"
+os.environ["HF_HOME"] = "/path/to/HF_HOME"
 
 
 from datasets import load_dataset
