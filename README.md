@@ -1,12 +1,13 @@
 # Apertus Project Setup Guide
 
-## Directory Structure inside Cluster
+## Directory Structure to recreate inside the cluster
 ```
 apertus-project/
 ├─ .venv/
 ├─ apertus-finetuning-recipes/
 │  ├─ configs/
 │  └─ query/
+│  └─ query_finetuned/
 ├─ output/
 ├─ huggingface_cache/
 └─ triton-cache/
