@@ -1,21 +1,13 @@
-#!/usr/bin/env python3
-"""
-Script to verify and test the fine-tuned LoRA model.
-This script will:
-1. Check if the output directory exists and contains the expected files
-2. Load the fine-tuned model
-3. Run a test inference to verify it works
-"""
-
 import os
+import glob
 import json
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 
 # Paths - adjust if needed
-BASE_MODEL_PATH = "/users/mmeciani/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
-LORA_ADAPTER_PATH = "/users/mmeciani/scratch/apertus-project/output"
+BASE_MODEL_PATH = "/path/to/model/config.json"
+LORA_ADAPTER_PATH = "/path/to/output"
 
 print("=" * 80)
 print("FINE-TUNED MODEL VERIFICATION SCRIPT")
@@ -49,7 +41,16 @@ for file in required_files:
         print(f"  ❌ {file}: NOT FOUND")
 
 # Check for trainer_state.json (contains training metrics)
-trainer_state_path = os.path.join(LORA_ADAPTER_PATH, "trainer_state.json")
+checkpoint_pattern = os.path.join(LORA_ADAPTER_PATH, "checkpoint-*")
+checkpoints = sorted(glob.glob(checkpoint_pattern))
+
+trainer_state_path = None
+for ckpt in checkpoints:
+    candidate = os.path.join(ckpt, "trainer_state.json")
+    if os.path.isfile(candidate):
+        trainer_state_path = candidate
+        break
+
 if os.path.exists(trainer_state_path):
     print(f"  ✅ trainer_state.json: Found")
 
@@ -78,6 +79,7 @@ if os.path.exists(trainer_state_path):
     print(f"✅ Best metric: {trainer_state.get('best_metric', 'N/A')}")
 else:
     print(f"  ⚠️  trainer_state.json: NOT FOUND (training metrics unavailable)")
+
 
 # Step 3: Load and test the model
 print("\n[3] Loading Fine-Tuned Model...")
@@ -129,6 +131,7 @@ try:
     print(f"  Total parameters: {total_params:,}")
     print(f"  Trainable %: {100 * trainable_params / total_params:.2f}%")
 
+    
     # Step 4: Run test inference
     print("\n[4] Running Test Inference...")
 
@@ -176,6 +179,7 @@ try:
     print(f"  Base model: {BASE_MODEL_PATH}")
     print(f"  LoRA adapter: {LORA_ADAPTER_PATH}")
 
+    
 except Exception as e:
     print(f"\n❌ ERROR during model loading or inference:")
     print(f"  {type(e).__name__}: {e}")
