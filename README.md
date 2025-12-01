@@ -1,6 +1,6 @@
 # Apertus Project Setup Guide
 
-## Directory Structure
+## Directory Structure inside Cluster
 ```
 apertus-project/
 ├─ .venv/
@@ -12,10 +12,11 @@ apertus-project/
 └─ triton-cache/
 ```
 
-## Steps
+## Steps to Set-Up
 
 ### 1. Clone and Import Finetuning Recipes
 - Place `apertus-finetuning-recipes` inside `apertus-project`.
+- Replace all paths placeholders with real paths: submit_lora.sbatch, sft_train.py, .yaml file, ...
 
 ### 2. Configure Output Directory
 - Create `output/` in `apertus-project`.
@@ -69,8 +70,19 @@ huggingface-cli download medalpaca/medical_meadow_medical_flashcards \
 
 - Check results and confirm the model path in `query.py` points to the correct location.
 
-### 7. Querying the Model
+## Querying the Model
 - Submit job using the sbatch script located in `apertus-finetuning-recipes/query`.
 - Ensure the model path in `query.py` points to  
   `HF_HOME/.../config.json` inside the downloaded Apertus folder.
+
+## Performing LoRA Finetuning
+- Double check all paths and evnironment variables/packages
+- Submit job using the sbatch script located in `apertus-finetuning-recipes`.
+- Check results in the `output` folder
+
+## Querying the Fine-Tuned Model
+
+
+
+  
 
