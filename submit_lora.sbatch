@@ -13,7 +13,7 @@
 #SBATCH --view=default
 
 # Set project directory
-PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
+PROJECT_DIR="/path/to/project/directory"
 
 # Disable Slurm CPU binding to prevent "outside of job step allocation" errors
 export SLURM_CPU_BIND="none"
