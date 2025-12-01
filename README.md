@@ -81,7 +81,9 @@ huggingface-cli download medalpaca/medical_meadow_medical_flashcards \
 - Check results in the `output` folder
 
 ## Querying the Fine-Tuned Model
-
+- Head to `query_finetuned`
+- Here a series of infos about the Fine-Tuned model will be displayed as well as a series of test prompts
+- Submit the test using `submit_verify.sbatch`
 
 
   
