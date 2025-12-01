@@ -20,6 +20,16 @@ export TOKENIZERS_PARALLELISM=false
 
 # Activate virtual environment
 source $PROJECT_DIR/.venv/bin/activate
+export PYTHONPATH="$PROJECT_DIR/.venv/lib/python3.13/site-packages:$PYTHONPATH"
 
-# Run verification script
-python verify_and_test_finetuned.py
+echo "Job started on $(hostname) at $(date)"
+echo "Working directory: $PWD"
+echo "HF_HOME set to: $HF_HOME"
+echo "Python interpreter: $(which python)"
+echo "Running Python script..."
+
+# Run the inference script
+python "$PROJECT_DIR/apertus-finetuning-recipes/query_finetuned/verify_and_test_finetuned.py"
+
+echo "Python script finished."
+echo "Job ended at $(date)"
