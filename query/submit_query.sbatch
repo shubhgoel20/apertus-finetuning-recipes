@@ -10,13 +10,31 @@
 #SBATCH --mem=64G                   # total memory
 #SBATCH --output=apertus_inference_%j.log
 #SBATCH --error=apertus_inference_%j.err
+#SBATCH --uenv=pytorch/v2.6.0:v1     # This loads your base PyTorch environment
 
-export HF_HOME="/users/$USER/scratch/apertus/huggingface_cache"
-# export HF_HUB_OFFLINE=1
+# Define project directory
+PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
 
-# Activate your virtual environment
-source /users/$USER/miniconda3/etc/profile.d/conda.sh
-conda activate apertus_env
+# Set environment variables for Hugging Face cache 
+export HF_HOME="$PROJECT_DIR/huggingface_cache"
+export HF_HUB_OFFLINE=1
+export PYTHONPATH="$PROJECT_DIR/.venv/lib/python3.13/site-packages:$PYTHONPATH"
+
+# Debugging
+export NCCL_DEBUG=INFO
+export TORCH_DISTRIBUTED_DEBUG=DETAIL
+
+# Activate the virtual environment
+source "$PROJECT_DIR/.venv/bin/activate"
+
+echo "Job started on $(hostname) at $(date)"
+echo "Working directory: $PWD"
+echo "HF_HOME set to: $HF_HOME"
+echo "Python interpreter: $(which python)"
+echo "Running Python script..."
 
 # Run the inference script
-python /users/$USER/scratch/apertus/query.py
+python "$PROJECT_DIR/apertus-finetuning-recipes/query/query.py"
+
+echo "Python script finished."
+echo "Job ended at $(date)"

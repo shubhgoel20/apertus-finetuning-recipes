@@ -12,34 +12,35 @@
 #SBATCH --uenv=pytorch/v2.6.0:v1
 #SBATCH --view=default
 
-# ---------------------------------------------------------
-# 1. Environment Setup
-# ---------------------------------------------------------
+# Set project directory
+PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
+
 # Disable Slurm CPU binding to prevent "outside of job step allocation" errors
 export SLURM_CPU_BIND="none"
 
-# Set HF Cache to scratch (optional but good practice)
-export HF_HOME="/path/to/huggingface_cache"
-export TRITON_CACHE_DIR="/path/to/triton_cache"
+# Set cache locations
+export HF_HOME="$PROJECT_DIR/huggingface_cache"
+export TRITON_CACHE_DIR="$PROJECT_DIR/triton_cache"
+mkdir -p "$TRITON_CACHE_DIR"   
 
-# Export python path if not done manually before
-# export PYTHONPATH=$PWD/.venv/lib/python3.13/site-packages:$PYTHONPATH
+export TORCH_EXTENSIONS_DIR="$PROJECT_DIR/torch_extensions"
+mkdir -p "$TORCH_EXTENSIONS_DIR"
+export TOKENIZERS_PARALLELISM=false
 
-# ---------------------------------------------------------
-# 2. Network Setup for Distributed Training
-# ---------------------------------------------------------
+# Set offline usage for Hugging Face to avoid internet access during training (CHECK IF NEEDED)
+# export HF_DATASETS_OFFLINE=1
+# export HF_HUB_OFFLINE=1
+
+# Set master address and port for distributed training
 MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 MASTER_PORT=29500
 
 echo "Master node: $MASTER_ADDR"
 echo "Master port: $MASTER_PORT"
 
-# ---------------------------------------------------------
-# 3. Execution
-# ---------------------------------------------------------
-# Explicitly set the config path
-CONFIG_FILE="configs/zero3_multinode.yaml"       # Use zero3.yaml (or zero3_multinode.yaml if you have created it)
-DATASET_NAME="dataset-name"               
+
+# Configuration file: use zero3.yaml or zero3_multinode.yaml for multi-node training
+CONFIG_FILE="$PROJECT_DIR/apertus-finetuning-recipes/configs/zero3_multinode.yaml"       
 
 # Calculate total processes (3 nodes * 4 GPUs = 12 processes)
 GPUS_PER_NODE=4
@@ -48,8 +49,8 @@ NUM_PROCESSES=$((SLURM_NNODES * GPUS_PER_NODE))
 echo "Launching $NUM_PROCESSES processes across $SLURM_NNODES nodes..."
 
 # Launch training
-CMD="source .venv/bin/activate && \
-    export PYTHONPATH=$PWD/.venv/lib/python3.13/site-packages:\$PYTHONPATH && \
+CMD="source $PROJECT_DIR/.venv/bin/activate && \
+    export PYTHONPATH=$PROJECT_DIR/.venv/lib/python3.13/site-packages:\$PYTHONPATH && \
     echo 'Node \${SLURM_PROCID} launched' && \
     accelerate launch \
     --config_file $CONFIG_FILE \

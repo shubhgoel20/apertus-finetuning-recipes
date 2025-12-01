@@ -1,5 +1,5 @@
 # Model
-model_name_or_path: swiss-ai/Apertus-8B-Instruct-2509
+model_name_or_path: /users/mmeciani/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586
 attn_implementation:  flash_attention_2    # Changed here to make it work on Clariden
 dtype: bfloat16
 
@@ -30,6 +30,6 @@ lr_scheduler_kwargs:
   min_lr_rate: 0.1
 
 # Output & logging
-output_dir: /path/to/output/
+output_dir: /users/mmeciani/scratch/apertus-project/output
 report_to: "none" 
 seed: 42

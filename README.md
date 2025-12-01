@@ -1,38 +1,37 @@
-# Apertus Fine-Tuning on Clariden (GH200 / uenv)
+# Apertus Project Setup Guide
 
-This guide documents the specific steps required to run the Apertus fine-tuning recipes on the CSCS Clariden cluster using the uenv software stack (NVIDIA GH200).
-
-## 1. Initial Setup (One-Time)
-
-### A. Start an Interactive Session
-
-Do not run installation steps on the login node. Always acquire a compute node first.
-
-```bash
-srun --nodes=1 --account=large-sc-2 --time=01:00:00 --pty bash
+## Directory Structure
+```
+apertus-project/
+├─ .venv/
+├─ apertus-finetuning-recipes/
+│  ├─ configs/
+│  └─ query/
+├─ output/
+├─ huggingface_cache/
+└─ triton-cache/
 ```
 
-### B. Pull the PyTorch Image
+## Steps
 
-Download the specific image optimized for GH200 (version v2.6.0:v1 as of April 2025). *Only needed once.*
+### 1. Clone and Import Finetuning Recipes
+- Place `apertus-finetuning-recipes` inside `apertus-project`.
+
+### 2. Configure Output Directory
+- Create `output/` in `apertus-project`.
+- Update YAML config paths inside `apertus-finetuning-recipes/configs` to point to this directory.
+
+### 3. Environment Setup on Login Node
+- Pull PyTorch uenv image and start session.
 
 ```bash
 uenv image pull pytorch/v2.6.0:v1
-```
-
-### C. Start the Environment
-
-Start the container with the default view.
-
-```bash
 uenv start pytorch/v2.6.0:v1 --view=default
 ```
 
-### D. Create Virtual Environment
+- Create and activate a virtual environment:
 
-Create a venv that inherits system packages (PyTorch, drivers) but allows local installations.
-
-```bash
+```python
 // Create venv (only once)
 python -m venv .venv --system-site-packages
 
@@ -40,46 +39,38 @@ python -m venv .venv --system-site-packages
 source .venv/bin/activate
 ```
 
-## 2. Dependency Installation
-
-Run the following commands in order:
-
+### 4. Install Required Packages
 ```bash
-# 1. Install modified requirements
+pip install --upgrade pip
+pip install --no-build-isolation git+https://github.com/nickjbrowning/XIELU
 pip install -r requirements.txt
-
-# 2. Force install transformers to local venv
-pip install --ignore-installed transformers
-pip install deprecated
 ```
 
-## 3. Configuration Fixes
-
-The default config uses an experimental attention kernel that fails on this cluster. Switch to standard Flash Attention 2.
-
-- Open your config file (e.g., `configs/sft_lora.yaml` or `configs/sft_full.yaml`).
-- Find the `attn_implementation` line.
-- Change it to:
-
-```yaml
-attn_implementation: "flash_attention_2"
-```
-
-## 4. Running Training
-
-Python may prioritize the system `transformers` over your local installation. Export `PYTHONPATH` before every run.
-
-### Option A: Interactive Run
-
+### 5. Configure Hugging Face Cache
 ```bash
-source .venv/bin/activate
-export PYTHONPATH=$PWD/.venv/lib/python3.13/site-packages:$PYTHONPATH
-python sft_train.py --config configs/sft_lora.yaml
+export HF_HOME="/users/mmeciani/scratch/apertus-project/huggingface_cache"
 ```
 
-Submit the job:
-
+### 6. Download Apertus Model (within .venv)
 ```bash
-sbatch submit_clariden.slurm
+huggingface-cli download swiss-ai/Apertus-8B-Instruct-2509 --cache-dir $HF_HOME --exclude "*.msgpack" "*.h5" "*.ot"
 ```
+
+### 7. Download Dataset
+```bash
+huggingface-cli download HuggingFaceH4/Multilingual-Thinking \
+    --repo-type dataset \
+    --cache-dir $HF_HOME
+
+huggingface-cli download medalpaca/medical_meadow_medical_flashcards \
+    --repo-type dataset \
+    --cache-dir $HF_HOME
+```
+
+- Check results and confirm the model path in `query.py` points to the correct location.
+
+### 7. Querying the Model
+- Submit job using the sbatch script located in `apertus-finetuning-recipes/query`.
+- Ensure the model path in `query.py` points to  
+  `HF_HOME/.../config.json` inside the downloaded Apertus folder.
 

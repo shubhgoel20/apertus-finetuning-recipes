@@ -20,9 +20,13 @@ accelerate launch \
     --model_name_or_path swiss-ai/Apertus-8B-Instruct-2509 \
 """
 
+import os
+
+os.environ["HF_HOME"] = "/users/mmeciani/scratch/apertus-project/huggingface_cache"
+
+
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import os
 from trl import (
     ModelConfig,
     ScriptArguments,
@@ -33,31 +37,39 @@ from trl import (
 )
 
 
-
 def main(script_args, training_args, model_args):
+    print(">>> DEBUG: Process started. Setting up...", flush=True)
     # ------------------------
     # Load model & tokenizer
     # ------------------------
     #Set base directory to store model
     store_base_dir = "./" #os.getenv("STORE")
 
-
+    print(f">>> DEBUG: Loading Model from {model_args.model_name_or_path}...", flush=True)
     model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         dtype=model_args.dtype,
         use_cache=False if training_args.gradient_checkpointing else True,
-        attn_implementation=model_args.attn_implementation,   # <-- ensure it’s used
+        attn_implementation=model_args.attn_implementation,
+        local_files_only=True, 
+        trust_remote_code=True,    
     )
+    print(">>> DEBUG: Model loaded successfully.", flush=True)
 
+    print(">>> DEBUG: Loading Tokenizer...", flush=True)
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
+        local_files_only=True,
+        trust_remote_code=True,
     )
     tokenizer.pad_token = tokenizer.eos_token
-
+    print(">>> DEBUG: Tokenizer loaded.", flush=True)
     # --------------
     # Load dataset
     # --------------
+    print(f">>> DEBUG: Loading Dataset {script_args.dataset_name}...", flush=True)
     dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
+    print(">>> DEBUG: Dataset loaded.", flush=True)
 
     # -------------
     # Train model
@@ -73,6 +85,7 @@ def main(script_args, training_args, model_args):
         peft_config=get_peft_config(model_args),
     )
 
+    print(">>> DEBUG: Starting Trainer...", flush=True)
     trainer.train()
     trainer.save_model(os.path.join(store_base_dir, training_args.output_dir))
     if training_args.push_to_hub:
