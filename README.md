@@ -6,7 +6,7 @@ apertus-project/
 ├─ .venv/
 ├─ apertus-finetuning-recipes/
 │  ├─ configs/
-│  └─ query/
+│  ├─ query/
 │  └─ query_finetuned/
 ├─ output/
 ├─ huggingface_cache/
