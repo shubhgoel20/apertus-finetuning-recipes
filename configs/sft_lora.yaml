@@ -30,6 +30,6 @@ lr_scheduler_kwargs:
   min_lr_rate: 0.1
 
 # Output & logging
-output_dir: /users/mmeciani/scratch/apertus-project/output
+output_dir: /path/to/output/
 report_to: "none" 
 seed: 42
