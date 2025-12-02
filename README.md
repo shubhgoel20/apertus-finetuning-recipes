@@ -10,7 +10,7 @@ apertus-project/
 │  └─ query_finetuned/
 ├─ output/
 ├─ huggingface_cache/
-└─ triton-cache/
+└─ triton_cache/
 ```
 
 ## Steps to Set-Up
