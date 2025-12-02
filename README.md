@@ -45,6 +45,7 @@ source .venv/bin/activate
 ```bash
 pip install --upgrade pip
 pip install --no-build-isolation git+https://github.com/nickjbrowning/XIELU
+pip install flash-attn==2.5.6 --no-build-isolation
 pip install -r requirements.txt
 ```
 
