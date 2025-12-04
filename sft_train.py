@@ -22,7 +22,7 @@ accelerate launch \
 
 import os
 
-os.environ["HF_HOME"] = "/path/to/HF_HOME"
+os.environ["HF_HOME"] = "/users/sgoel/scratch/apertus-project/huggingface_cache"
 
 
 from datasets import load_dataset
@@ -36,6 +36,18 @@ from trl import (
     get_peft_config,
 )
 
+def convert_to_messages(example):
+    return {
+        "messages": [
+            {"role": "user", "content": example["input"]},
+            {"role": "assistant", "content": example["output"]}
+        ]
+    }
+
+def convert_to_text(example):
+    return {
+        "text": f"{example['input']}\n{example['output']}"
+    }
 
 def main(script_args, training_args, model_args):
     print(">>> DEBUG: Process started. Setting up...", flush=True)
@@ -69,6 +81,9 @@ def main(script_args, training_args, model_args):
     # --------------
     print(f">>> DEBUG: Loading Dataset {script_args.dataset_name}...", flush=True)
     dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
+    if(script_args.dataset_name != "HuggingFaceH4/Multilingual-Thinking"):
+            dataset = dataset.map(convert_to_messages)
+            print("converted into messages")
     print(">>> DEBUG: Dataset loaded.", flush=True)
 
     # -------------

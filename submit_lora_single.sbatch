@@ -1,16 +1,17 @@
 #!/bin/bash
 #SBATCH --job-name=apertus_inference
 #SBATCH --account=large-sc-2
-#SBATCH --time=00:20:00             # adjust based on expected runtime
+#SBATCH --time=02:30:00             # adjust based on expected runtime
 #SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=12           # adjust based on cluster
 #SBATCH --mem=64G                   # total memory
-#SBATCH --output=apertus_inference_%j.log
-#SBATCH --error=apertus_inference_%j.err
+#SBATCH --output=apertus_finetune_%j.log
+#SBATCH --error=apertus_finetune_%j.err
 #SBATCH --uenv=pytorch/v2.6.0:v1     # This loads your base PyTorch environment
+#SBATCH --view=default
 
 # Define project directory
 PROJECT_DIR="/users/sgoel/scratch/apertus-project"
@@ -34,7 +35,7 @@ echo "Python interpreter: $(which python)"
 echo "Running Python script..."
 
 # Run the inference script
-python "$PROJECT_DIR/apertus-finetuning-recipes/query/query.py"
+python "$PROJECT_DIR/apertus-finetuning-recipes/sft_train.py" --config $PROJECT_DIR/apertus-finetuning-recipes/configs/sft_lora.yaml
 
 echo "Python script finished."
 echo "Job ended at $(date)"

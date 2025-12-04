@@ -2,7 +2,7 @@ import torch
 import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-model_path = "/path/to/model/config.json"
+model_path = "/users/sgoel/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
 
 print(f"--- Starting Inference for {model_path} ---")
 print(f"CUDA Available: {torch.cuda.is_available()}")

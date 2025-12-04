@@ -8,4 +8,4 @@ accelerate>=0.20.0
 datasets
 bitsandbytes
 huggingface_hub
-flash-attn==2.5.6 --no-build-isolation
+flash-attn==2.5.6
