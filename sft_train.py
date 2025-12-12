@@ -60,6 +60,7 @@ def main(script_args, training_args, model_args):
     #Set base directory to store model
     store_base_dir = "./" #os.getenv("STORE")
 
+    '''
     print(f">>> DEBUG: Loading Model from {model_args.model_name_or_path}...", flush=True)
     model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
@@ -70,6 +71,7 @@ def main(script_args, training_args, model_args):
         trust_remote_code=True,    
     )
     print(">>> DEBUG: Model loaded successfully.", flush=True)
+    '''
 
     print(">>> DEBUG: Loading Tokenizer...", flush=True)
     tokenizer = AutoTokenizer.from_pretrained(
@@ -103,7 +105,7 @@ def main(script_args, training_args, model_args):
     # Train model
     # -------------
     trainer = SFTTrainer(
-        model=model,
+        model=model_args.model_name_or_path,        # before was model=model
         args=training_args,
         train_dataset=dataset[script_args.dataset_train_split],
         eval_dataset=dataset[script_args.dataset_test_split]
