@@ -6,8 +6,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 
 # Paths - adjust if needed
-BASE_MODEL_PATH = "/path/to/model/config.json"
-LORA_ADAPTER_PATH = "/path/to/output"
+BASE_MODEL_PATH = "/users/mmeciani/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
+LORA_ADAPTER_PATH = "/users/mmeciani/scratch/apertus-project/output"
 
 print("=" * 80)
 print("FINE-TUNED MODEL VERIFICATION SCRIPT")
@@ -136,9 +136,7 @@ try:
     print("\n[4] Running Test Inference...")
 
     test_prompts = [
-        "What is the capital of Switzerland?",
-        "Explain quantum computing in simple terms.",
-        "Write a short poem about mountains."
+        "What is suggested by high PCWP worsening after IVF and arrhythmias? Provide a precise, concise answer of maximum 2 sentences"
     ]
 
     for i, prompt in enumerate(test_prompts, 1):

@@ -2,7 +2,8 @@ import torch
 import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-model_path = "/path/to/model/config.json"
+model_path = "/users/mmeciani/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
+
 
 print(f"--- Starting Inference for {model_path} ---")
 print(f"CUDA Available: {torch.cuda.is_available()}")
@@ -42,7 +43,7 @@ print(f"Model loaded on device: {model.device}")
 print(f"Model dtype: {model.dtype}")
 
 # 4. Prepare Input
-prompt = "What is the capital of Switzerland?"
+prompt = "What is suggested by high PCWP worsening after IVF and arrhythmias? Provide a precise, concise answer of maximum 2 sentences"
 messages = [
     {"role": "user", "content": prompt}
 ]

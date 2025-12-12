@@ -12,17 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-accelerate launch \
-    --config_file configs/zero3.yaml \
-    sft_train.py \
-    --config configs/sft_lora.yaml \
-    --model_name_or_path swiss-ai/Apertus-8B-Instruct-2509 \
-"""
-
 import os
 
-os.environ["HF_HOME"] = "/path/to/HF_HOME"
+os.environ["HF_HOME"] = "/users/mmeciani/scratch/apertus-project/huggingface_cache"
 
 
 from datasets import load_dataset
@@ -36,6 +28,29 @@ from trl import (
     get_peft_config,
 )
 
+def convert_to_messages(example):       # Specific version to work with medalpaca
+    """
+    Maps 'instruction', 'input', 'output' to the standard messages format.
+    Handles cases where instruction might be empty.
+    """
+    # 1. Extract content safely
+    instruction = example.get("instruction", "")
+    user_content = example.get("input", "")
+    assistant_content = example.get("output", "")
+    
+    # 2. Build the messages list
+    messages = []
+    
+    # Add System Prompt (Critical for setting behavior)
+    # Even if it's generic, it tells the model "This is an instruction-following task"
+    if instruction:
+        messages.append({"role": "system", "content": instruction})
+    
+    # Add User/Assistant turns
+    messages.append({"role": "user", "content": user_content})
+    messages.append({"role": "assistant", "content": assistant_content})
+
+    return {"messages": messages}
 
 def main(script_args, training_args, model_args):
     print(">>> DEBUG: Process started. Setting up...", flush=True)
@@ -71,6 +86,19 @@ def main(script_args, training_args, model_args):
     dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
     print(">>> DEBUG: Dataset loaded.", flush=True)
 
+
+    print(">>> DEBUG: converting data to messages format...", flush=True)
+    column_names = dataset[script_args.dataset_train_split].column_names    
+    dataset = dataset.map(
+        convert_to_messages,
+        remove_columns=column_names, # IMPORTANT: Remove old columns
+        desc="Formatting dataset"
+    )
+    print(f">>> DEBUG: Format complete. Columns are now: {dataset[script_args.dataset_train_split].column_names}", flush=True)
+    print(f"\n>>> DEBUG: Verify Data Format (First Example):", flush=True)
+    print(dataset[script_args.dataset_train_split][0]["messages"], flush=True)
+    print("-" * 50, flush=True)
+    
     # -------------
     # Train model
     # -------------
