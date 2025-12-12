@@ -45,7 +45,6 @@ source .venv/bin/activate
 ```bash
 pip install --upgrade pip
 pip install --no-build-isolation git+https://github.com/nickjbrowning/XIELU
-pip install flash-attn==2.5.6 --no-build-isolation
 pip install -r requirements.txt
 ```
 
@@ -70,7 +69,7 @@ huggingface-cli download medalpaca/medical_meadow_medical_flashcards \
     --cache-dir $HF_HOME
 ```
 
-- Check results and confirm the model path in `query.py` points to the correct location.
+- Update the HF_HOME path in stf_train.py and update the path to the model and dataset in the YAML config file. Make sure HF_DATASETS_OFFLINE and HF_HUB_OFFLINE are set in submit_lora.sbatch. Use export NCCL_SOCKET_IFNAME=hsn,ib,eth, export NCCL_IB_DISABLE=0
 
 ## Querying the Model
 - Submit job using the sbatch script located in `apertus-finetuning-recipes/query`.
@@ -88,5 +87,19 @@ huggingface-cli download medalpaca/medical_meadow_medical_flashcards \
 - Submit the test using `submit_verify.sbatch`
 
 
+
+# To add to convert
+print(">>> DEBUG: converting data to messages format...", flush=True)
+    
+
+column_names = dataset[script_args.dataset_train_split].column_names
+
+dataset = dataset.map(
+    convert_to_messages,
+    remove_columns=column_names, # IMPORTANT: Remove old columns
+    desc="Formatting dataset"
+)
+  
+print(f">>> DEBUG: Format complete. Columns are now: {dataset[script_args.dataset_train_split].column_names}", flush=True)
   
 
