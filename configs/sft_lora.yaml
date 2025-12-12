@@ -4,13 +4,13 @@ attn_implementation:  flash_attention_2    # Changed here to make it work on Cla
 dtype: bfloat16
 
 # Dataset
-dataset_name: /users/sgoel/scratch/apertus-project/huggingface_cache/datasets--medalpaca--medical_meadow_medical_flashcards/snapshots/7597b32036d67c731cb91bae4f49717fcfe5d5f0
+dataset_name: "/users/sgoel/scratch/apertus-project/huggingface_cache/datasets--mamachang--medical-reasoning/snapshots/3e784b9fee85b9d8b6974449b3dfe0737ac9ecba"
 dataset_num_proc: 12
 
 # Hyperparameters
 learning_rate: 2.0e-4
 gradient_checkpointing: true
-num_train_epochs: 1.0
+num_train_epochs: 8
 logging_steps: 1
 per_device_train_batch_size: 4
 gradient_accumulation_steps: 1
@@ -18,7 +18,7 @@ gradient_accumulation_steps: 1
 # LoRA / PEFT
 use_peft: true
 lora_r: 8
-lora_alpha: 16
+lora_alpha: 32
 lora_dropout: 0.0
 lora_target_modules: all-linear
 

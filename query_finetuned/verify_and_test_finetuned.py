@@ -5,9 +5,22 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 
+from datasets import load_dataset
+import json
+
+dataset_path = "/users/sgoel/scratch/apertus-project/huggingface_cache/datasets--mamachang--medical-reasoning/snapshots/3e784b9fee85b9d8b6974449b3dfe0737ac9ecba"
+ds = load_dataset(dataset_path, split="train")
+
+
 # Paths - adjust if needed
-BASE_MODEL_PATH = "/path/to/model/config.json"
-LORA_ADAPTER_PATH = "/path/to/output"
+BASE_MODEL_PATH = "/users/sgoel/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
+LORA_ADAPTER_PATH = "/users/sgoel/scratch/apertus-project/output"
+
+# Confirm HF_HOME and offline status (still good to see for debugging)
+hf_home_env = os.environ.get("HF_HOME", "Not Set")
+hf_offline_env = os.environ.get("HF_HUB_OFFLINE", "0")
+print(f"HF_HOME environment variable: {hf_home_env}")
+print(f"HF_HUB_OFFLINE environment variable: {hf_offline_env}")
 
 print("=" * 80)
 print("FINE-TUNED MODEL VERIFICATION SCRIPT")
@@ -107,7 +120,7 @@ try:
     print("\nLoading base model...")
     base_model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL_PATH,
-        device_map="auto",
+        device_map="cuda",
         torch_dtype=torch.bfloat16,
         local_files_only=True,
         trust_remote_code=True
@@ -133,43 +146,100 @@ try:
 
     
     # Step 4: Run test inference
-    print("\n[4] Running Test Inference...")
+    # print("\n[4] Running Test Inference...")
 
-    test_prompts = [
-        "What is the capital of Switzerland?",
-        "Explain quantum computing in simple terms.",
-        "Write a short poem about mountains."
-    ]
+    # test_prompts = [
+    #     "What is the capital of Switzerland?",
+    #     "Explain quantum computing in simple terms.",
+    #     "Write a short poem about mountains."
+    # ]
 
-    for i, prompt in enumerate(test_prompts, 1):
-        print(f"\n--- Test {i} ---")
-        print(f"Prompt: {prompt}")
+    # for i, prompt in enumerate(test_prompts, 1):
+    #     print(f"\n--- Test {i} ---")
+    #     print(f"Prompt: {prompt}")
 
-        messages = [{"role": "user", "content": prompt}]
+    #     messages = [{"role": "user", "content": prompt}]
+    #     text = tokenizer.apply_chat_template(
+    #         messages,
+    #         tokenize=False,
+    #         add_generation_prompt=True
+    #     )
+
+    #     model_inputs = tokenizer([text], return_tensors="pt", add_special_tokens=False).to(model.device)
+
+    #     print("Generating response...")
+    #     with torch.no_grad():
+    #         generated_ids = model.generate(
+    #             **model_inputs,
+    #             max_new_tokens=256,
+    #             do_sample=True,
+    #             temperature=0.7,
+    #             top_p=0.9,
+    #             pad_token_id=tokenizer.eos_token_id
+    #         )
+
+    #     output_ids = generated_ids[0][len(model_inputs.input_ids[0]):]
+    #     response = tokenizer.decode(output_ids, skip_special_tokens=True)
+
+    #     print(f"Response:\n{response}")
+    #     print("-" * 40)
+
+    correct = 0
+    total = 0
+    instruction = " Instruction: Please answer with one of the option in the bracket. Write your answer as follows: Answer: <your answer>"
+    for i, ex in enumerate(ds.shuffle(seed=42).select(range(1000))):
+        # print("=== example", i, "===")
+        total+=1
+        prompt = ex["input"]+instruction
+        
+        messages = [
+            {"role": "user", "content": prompt}
+        ]
+
         text = tokenizer.apply_chat_template(
             messages,
             tokenize=False,
-            add_generation_prompt=True
+            add_generation_prompt=True,
         )
+        # print(f"Input prompt prepared:\n{text}")
 
         model_inputs = tokenizer([text], return_tensors="pt", add_special_tokens=False).to(model.device)
 
-        print("Generating response...")
-        with torch.no_grad():
-            generated_ids = model.generate(
-                **model_inputs,
-                max_new_tokens=256,
-                do_sample=True,
-                temperature=0.7,
-                top_p=0.9,
-                pad_token_id=tokenizer.eos_token_id
-            )
+        # 5. Generate
+        # print("Generating response...")
+        generated_ids = model.generate(
+            **model_inputs,
+            max_new_tokens=1024,
+            do_sample=True,
+            temperature=0.5,
+            top_p=0.9
+        )
 
-        output_ids = generated_ids[0][len(model_inputs.input_ids[0]):]
+        # 6. Decode and Print
+        output_ids = generated_ids[0][len(model_inputs.input_ids[0]) :]
         response = tokenizer.decode(output_ids, skip_special_tokens=True)
 
-        print(f"Response:\n{response}")
-        print("-" * 40)
+        model_answer = response.split(" ")
+        if len(model_answer) < 2 :
+            continue
+        model_answer = model_answer[1]
+        if len(model_answer) < 1 :
+            continue
+
+        model_answer = model_answer[0]
+        ground_truth = ex["output"].split("\n<answer>\n")[-1][0]
+        if model_answer == ground_truth:
+            correct+=1
+        
+        if i%100 == 0:
+            print("=== example", i, "===")
+            print(f"correct: {correct}")
+            print(f"total: {total}")
+            print(f"accuracy: {correct/total}")
+
+    print(f"correct: {correct}")
+    print(f"total: {total}")
+    print(f"accuracy: {correct/total}")
 
     print("\n" + "=" * 80)
     print("✅ VERIFICATION COMPLETE - MODEL IS WORKING!")

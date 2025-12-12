@@ -39,7 +39,7 @@ from trl import (
 def convert_to_messages(example):
     return {
         "messages": [
-            {"role": "user", "content": example["input"]},
+            {"role": "user", "content": example["input"] + example["instruction"]},
             {"role": "assistant", "content": example["output"]}
         ]
     }

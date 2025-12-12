@@ -1,26 +1,31 @@
 #!/bin/bash
 #SBATCH --job-name=verify_finetuned
 #SBATCH --account=large-sc-2
-#SBATCH --time=00:30:00
+#SBATCH --time=07:30:00
 #SBATCH --partition=normal
 #SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=1
-#SBATCH --cpus-per-task=18
+#SBATCH --cpus-per-task=12           # adjust based on cluster
+#SBATCH --mem=64G                   # total memory
 #SBATCH --output=verify_finetuned_%j.log
 #SBATCH --error=verify_finetuned_%j.err
-#SBATCH --uenv=pytorch/v2.6.0:v1
-#SBATCH --view=default
+#SBATCH --uenv=pytorch/v2.6.0:v1     # This loads your base PyTorch environment
 
 # Set project directory
-PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
+PROJECT_DIR="/users/sgoel/scratch/apertus-project"
 
-# Set cache locations
+# Set environment variables for Hugging Face cache 
 export HF_HOME="$PROJECT_DIR/huggingface_cache"
-export TOKENIZERS_PARALLELISM=false
-
-# Activate virtual environment
-source $PROJECT_DIR/.venv/bin/activate
+export HF_HUB_OFFLINE=1
 export PYTHONPATH="$PROJECT_DIR/.venv/lib/python3.13/site-packages:$PYTHONPATH"
+
+# Debugging
+export NCCL_DEBUG=INFO
+export TORCH_DISTRIBUTED_DEBUG=DETAIL
+
+# Activate the virtual environment
+source "$PROJECT_DIR/.venv/bin/activate"
 
 echo "Job started on $(hostname) at $(date)"
 echo "Working directory: $PWD"
