@@ -7,6 +7,7 @@ import json
 dataset_path = "/users/sgoel/scratch/apertus-project/huggingface_cache/datasets--mamachang--medical-reasoning/snapshots/3e784b9fee85b9d8b6974449b3dfe0737ac9ecba"
 ds = load_dataset(dataset_path, split="train")
 
+
 model_path = "/users/sgoel/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
 
 print(f"--- Starting Inference for {model_path} ---")
@@ -50,7 +51,7 @@ print(f"Model dtype: {model.dtype}")
 correct = 0
 total = 0
 instruction = " Instruction: Please answer with one of the option in the bracket. Write your answer as follows: Answer: <your answer>"
-for i, ex in enumerate(ds.shuffle(seed=42).select(range(100))):
+for i, ex in enumerate(ds.shuffle(seed=42).select(range(10))):
     # print("=== example", i, "===")
     total+=1
     prompt = ex["input"]+instruction

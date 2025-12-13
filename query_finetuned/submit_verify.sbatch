@@ -27,6 +27,7 @@ export TORCH_DISTRIBUTED_DEBUG=DETAIL
 # Activate the virtual environment
 source "$PROJECT_DIR/.venv/bin/activate"
 
+
 echo "Job started on $(hostname) at $(date)"
 echo "Working directory: $PWD"
 echo "HF_HOME set to: $HF_HOME"

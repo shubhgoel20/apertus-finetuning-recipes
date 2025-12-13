@@ -10,14 +10,14 @@ dataset_num_proc: 12
 # Hyperparameters
 learning_rate: 2.0e-4
 gradient_checkpointing: true
-num_train_epochs: 8
+num_train_epochs: 4
 logging_steps: 1
 per_device_train_batch_size: 4
 gradient_accumulation_steps: 1
 
 # LoRA / PEFT
 use_peft: true
-lora_r: 8
+lora_r: 16
 lora_alpha: 32
 lora_dropout: 0.0
 lora_target_modules: all-linear

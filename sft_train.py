@@ -44,10 +44,27 @@ def convert_to_messages(example):
         ]
     }
 
-def convert_to_text(example):
-    return {
-        "text": f"{example['input']}\n{example['output']}"
-    }
+model_path = "/users/sgoel/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
+
+tokenizer = AutoTokenizer.from_pretrained(
+    model_path, # Use the direct local path
+    local_files_only=True, # Keep this, it reinforces offline mode
+    trust_remote_code=True
+)
+
+# Ensure the tokenizer has a pad token (common issue with Llama 3)
+tokenizer.pad_token = tokenizer.eos_token
+
+def apply_chat_template(example):
+    # tokenize=False creates the string string with special tokens (<s>, [INST], etc.)
+    # add_generation_prompt=False ensures we include the Assistant's response in the string for training
+    formatted_text = tokenizer.apply_chat_template(
+        example["messages"], 
+        tokenize=False, 
+        add_generation_prompt=False
+    )
+    return {"text": formatted_text}
+
 
 def main(script_args, training_args, model_args):
     print(">>> DEBUG: Process started. Setting up...", flush=True)
@@ -84,6 +101,12 @@ def main(script_args, training_args, model_args):
     if(script_args.dataset_name != "HuggingFaceH4/Multilingual-Thinking"):
             dataset = dataset.map(convert_to_messages)
             print("converted into messages")
+            dataset = dataset.map(apply_chat_template)
+            print("converted into chat template")
+            # --- DEBUGGING: INSPECT THE RESULT ---
+            print("=== FINAL TRAINING INPUT ===")
+            print(dataset['train'][0]["text"], flush=True)
+
     print(">>> DEBUG: Dataset loaded.", flush=True)
 
     # -------------
