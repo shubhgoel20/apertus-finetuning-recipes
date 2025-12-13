@@ -29,7 +29,7 @@ echo "Python interpreter: $(which python)"
 echo "Running Python script..."
 
 # Run the inference script
-python "$PROJECT_DIR/apertus-finetuning-recipes/query_finetuned/verify_and_test_finetuned.py"
+python "$PROJECT_DIR/apertus-finetuning-recipes/query_finetuned/check_results.py"
 
 echo "Python script finished."
 echo "Job ended at $(date)"

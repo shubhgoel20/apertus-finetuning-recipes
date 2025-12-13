@@ -4,7 +4,7 @@ attn_implementation:  flash_attention_2    # Changed here to make it work on Cla
 dtype: bfloat16
 
 # Dataset
-dataset_name: /users/mmeciani/scratch/apertus-project/huggingface_cache/datasets--medalpaca--medical_meadow_medical_flashcards
+dataset_name: /users/mmeciani/scratch/apertus-project/huggingface_cache/datasets--mamachang--medical-reasoning
 dataset_num_proc: 12
 
 # Hyperparameters

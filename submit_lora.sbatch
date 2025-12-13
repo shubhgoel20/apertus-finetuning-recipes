@@ -20,9 +20,26 @@ export TRITON_CACHE_DIR="$PROJECT_DIR/triton_cache"
 export TORCH_EXTENSIONS_DIR="$PROJECT_DIR/torch_extensions"
 mkdir -p "$TRITON_CACHE_DIR" "$TORCH_EXTENSIONS_DIR"
 
+echo "Clearing stale cache locks..."
+find "$TRITON_CACHE_DIR" -name "*.lock" -mmin +60 -delete 2>/dev/null || true
+find "$TORCH_EXTENSIONS_DIR" -name "*.lock" -mmin +60 -delete 2>/dev/null || true
+find "$HF_HOME" -name "*.lock" -mmin +60 -delete 2>/dev/null || true
+
+cleanup() {
+    echo "Cleaning up processes..."
+    pkill -P $$ 2>/dev/null || true
+    srun --overlap bash -c "pkill -u $USER python; pkill -u $USER accelerate" 2>/dev/null ||
+true
+}
+trap cleanup EXIT SIGTERM SIGINT
+
+
 # Force offline mode
 export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
+export NCCL_TIMEOUT=1800           # 30 minute timeout for NCCL operations
+export NCCL_ASYNC_ERROR_HANDLING=1 # Better error reporting
+export TORCH_DISTRIBUTED_DEBUG=DETAIL  # More verbose distributed logs
 
 # --- 2. CRITICAL: Network & Debugging Configuration ---
 # 1. Enable logging so we see WHERE it hangs.
@@ -54,6 +71,12 @@ GPUS_PER_NODE=4
 NUM_PROCESSES=$((SLURM_NNODES * GPUS_PER_NODE))
 
 echo "Launching $NUM_PROCESSES processes across $SLURM_NNODES nodes..."
+
+echo "Synchronizing nodes..."
+srun --ntasks=$SLURM_NNODES bash -c "echo 'Node ready: \$(hostname)'" || {
+    echo "ERROR: Not all nodes are accessible. Aborting."
+    exit 1
+}
 
 # --- 4. The Launch Command ---
 # We use 'srun' to start one copy of 'accelerate launch' on every node.
