@@ -11,7 +11,7 @@
 #SBATCH --error=apertus_finetune_%j.err
 
 # --- 1. Environment & Paths ---
-PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
+PROJECT_DIR="/users/$USER/scratch/apertus-project"
 export SLURM_CPU_BIND="none"
 
 # Cache locations
