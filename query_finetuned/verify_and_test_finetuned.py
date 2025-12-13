@@ -4,6 +4,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
 import json
 import sys
+import re
 
 dataset_path = "/users/sgoel/scratch/apertus-project/huggingface_cache/datasets--mamachang--medical-reasoning/snapshots/3e784b9fee85b9d8b6974449b3dfe0737ac9ecba"
 ds = load_dataset(dataset_path, split="train")
@@ -111,12 +112,12 @@ if os.path.exists(trainer_state_path):
 
         # Show final metrics
         final_entry = trainer_state["log_history"][-1]
-        print(f"\n📊 Final Training Metrics:", flush=True)
+        print(f"\n Final Training Metrics:", flush=True)
         for key, value in final_entry.items():
             if key not in ["step", "epoch"]:
                 print(f"  {key}: {value}", flush=True)
 
-    print(f"\notal training steps: {trainer_state.get('global_step', 'N/A')}", flush=True)
+    print(f"\ntotal training steps: {trainer_state.get('global_step', 'N/A')}", flush=True)
     print(f"Best metric: {trainer_state.get('best_metric', 'N/A')}", flush=True)
 else:
     print(f"  ⚠️  trainer_state.json: NOT FOUND (training metrics unavailable)", flush=True)
@@ -131,13 +132,26 @@ sys.stdout.flush()
 try:
     
     from peft import PeftModel
+    
+    # 1. CRITICAL FIX: Set Padding Side to LEFT for Generation
+    # Llama/Mistral generation fails or slows down with Right Padding
+    tokenizer.padding_side = "left" 
+    
     # Load LoRA adapter
     print("\nLoading LoRA adapter...")
     model = PeftModel.from_pretrained(base_model, LORA_ADAPTER_PATH)
-    print("✅ LoRA adapter loaded successfully!")
+    
+    # 2. CRITICAL FIX: Merge Adapter into Base Model
+    # This removes the runtime overhead of LoRA
+    print("Merging adapter weights into base model...")
+    model = model.merge_and_unload()
+    print("Model merged! Inference speed will now match base model.")
+
+    # 3. Switch to eval mode
+    model.eval()
 
     # Get model info
-    print("\n📊 Model Information:")
+    print("\nModel Information:")
     print(f"  Device: {model.device}")
     print(f"  Dtype: {model.dtype}")
 
@@ -148,115 +162,118 @@ try:
     print(f"  Total parameters: {total_params:,}")
     print(f"  Trainable %: {100 * trainable_params / total_params:.2f}%")
 
-    
-    # Step 4: Run test inference
-    # print("\n[4] Running Test Inference...")
+    def get_answer_from_text(text):
+        """
+        Robustly extracts the option letter (A-E).
+        Strategy 1: Look for <answer> [Letter]
+        Strategy 2: Look for </analysis> ... [Letter] (Fallback if model skips tag)
+        """
+        # 1. Standard Case: Look for <answer> followed by A-E
+        # Matches: <answer>A, <answer> A, <answer>\nC
+        match = re.search(r"<answer>\s*([A-E])", text, re.IGNORECASE)
+        if match:
+            return match.group(1).upper()
+        
+        # 2. Fallback Case: Look for </analysis> followed by A-E
+        # Matches: </analysis>\nC:, </analysis> \n A
+        match = re.search(r"</analysis>\s*([A-E])", text, re.IGNORECASE)
+        if match:
+            return match.group(1).upper()
 
-    # test_prompts = [
-    #     "What is the capital of Switzerland?",
-    #     "Explain quantum computing in simple terms.",
-    #     "Write a short poem about mountains."
-    # ]
+        return None
 
-    # for i, prompt in enumerate(test_prompts, 1):
-    #     print(f"\n--- Test {i} ---")
-    #     print(f"Prompt: {prompt}")
-
-    #     messages = [{"role": "user", "content": prompt}]
-    #     text = tokenizer.apply_chat_template(
-    #         messages,
-    #         tokenize=False,
-    #         add_generation_prompt=True
-    #     )
-
-    #     model_inputs = tokenizer([text], return_tensors="pt", add_special_tokens=False).to(model.device)
-
-    #     print("Generating response...")
-    #     with torch.no_grad():
-    #         generated_ids = model.generate(
-    #             **model_inputs,
-    #             max_new_tokens=256,
-    #             do_sample=True,
-    #             temperature=0.7,
-    #             top_p=0.9,
-    #             pad_token_id=tokenizer.eos_token_id
-    #         )
-
-    #     output_ids = generated_ids[0][len(model_inputs.input_ids[0]):]
-    #     response = tokenizer.decode(output_ids, skip_special_tokens=True)
-
-    #     print(f"Response:\n{response}")
-    #     print("-" * 40)
-
-    sys.stdout.flush()
+    # 1. Define the exact instruction used in training
+    instruction_text = "Please answer with one of the option in the bracket. Write reasoning in between <analysis></analysis>. Write answer in between <answer></answer>."
 
     correct = 0
     total = 0
-    instruction = " Instruction: Please answer with one of the option in the bracket. Write your answer as follows: Answer: <your answer>"
-    for i, ex in enumerate(ds.shuffle(seed=42).select(range(10))):
-        # print("=== example", i, "===")
-        
-        total+=1
-        prompt = ex["input"]+instruction
-        
+
+    # Ensure pad token is set for generation
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+
+    print(f">>> Starting Evaluation...", flush=True)
+
+    # Select range (e.g., first 50 examples)
+    eval_subset = ds.shuffle(seed=42).select(range(10))
+    
+    for i, ex in enumerate(eval_subset):
+         # Debug Printing
+        print("="*50, flush=True)
+        print(f"Example {i}", flush=True)
+        total += 1
+    
+        # 2. Construct Messages exactly like the training script
         messages = [
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": instruction_text},
+            {"role": "user", "content": ex["input"]}
         ]
 
-        print("="*50, flush=True)
-        print("prompt:",flush=True)
-        print(prompt, flush=True)
-
-        text = tokenizer.apply_chat_template(
+        # Apply chat template
+        prompt_text = tokenizer.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True,
         )
-        # print(f"Input prompt prepared:\n{text}")
 
-        model_inputs = tokenizer([text], return_tensors="pt", add_special_tokens=False).to(model.device)
+        model_inputs = tokenizer([prompt_text], return_tensors="pt", add_special_tokens=False).to(model.device)
 
-        # 5. Generate
-        # print("Generating response...")
+        # 3. Generate with Stopping Criteria
+        # stop_strings requires tokenizer to be passed to generate.
+        # It will stop generation once "</answer>" is produced.
         generated_ids = model.generate(
             **model_inputs,
-            max_new_tokens=1024,
-            do_sample=True,
-            temperature=0.5,
-            top_p=0.9
+            use_cache=True,
+            max_new_tokens=4096,
+            do_sample=False,       # Greedy decoding is usually better for strict evaluation
+            temperature=0.0,       # Turn off randomness for reproducibility
+            tokenizer=tokenizer,
+            stop_strings=["</answer>", "```"] # Stop at closing tag
         )
 
-        # 6. Decode and Print
+        # Decode response
         output_ids = generated_ids[0][len(model_inputs.input_ids[0]) :]
         response = tokenizer.decode(output_ids, skip_special_tokens=True)
 
-        print("="*50, flush=True)
-        print(response, flush=True)
+        # print(f"Generated Response :\n{response}")
 
-        model_answer = response.split(" ")
-        if len(model_answer) < 2 :
-            continue
-        model_answer = model_answer[1]
-        if len(model_answer) < 1 :
-            continue
-
-        model_answer = model_answer[0]
-        ground_truth = ex["output"].split("\n<answer>\n")[-1][0]
-        print(f"Ground Truth: {ground_truth}", flush=True)
-
-        if model_answer == ground_truth:
-            correct+=1
+        # 4. Extract Answers using the new function
+        model_answer_letter = get_answer_from_text(response)
         
-        if i%5 == 0:
-            print("=== example", i, "===")
-            print(f"correct: {correct}")
-            print(f"total: {total}")
-            print(f"accuracy: {correct/total}")
+        # Handle the Ground Truth format
+        # Your ground truth format is: ... <answer>\nE: ...
+        # We can use the same function on ground truth to be safe
+        ground_truth_letter = get_answer_from_text(ex["output"])
+        
+        # If function fails on ground_truth, fall back to simple split
+        if not ground_truth_letter:
+            ground_truth_letter = ex["output"].split("<answer>")[-1].strip()[0]
+
+       
+        print(f"Full Response:\n{response}", flush=True) # Uncomment to see full reasoning
+        print(f"Model Letter: {model_answer_letter}", flush=True)
+        print(f"Ground Truth: {ground_truth_letter}", flush=True)
+
+        # 5. Calculate Accuracy
+        if model_answer_letter and ground_truth_letter:
+            if model_answer_letter == ground_truth_letter:
+                correct += 1
+                print(">> RESULT: CORRECT", flush=True)
+            else:
+                print(">> RESULT: WRONG", flush=True)
+        else:
+            print(">> RESULT: PARSE ERROR (Model failed to generate valid format)", flush=True)
+
+        # Periodic logging
+        if (i + 1) % 5 == 0:
+            print(f"\n--- Progress: {i+1}/{len(eval_subset)} ---")
+            print(f"Current Accuracy: {correct/total:.2%}")
             sys.stdout.flush()
 
-    print(f"correct: {correct}")
-    print(f"total: {total}")
-    print(f"accuracy: {correct/total}")
+    print("="*50)
+    print(f"Final Correct: {correct}")
+    print(f"Final Total: {total}")
+    print(f"Final Accuracy: {correct/total:.4f}")
 
     print("\n" + "=" * 80)
     print("✅ VERIFICATION COMPLETE - MODEL IS WORKING!")

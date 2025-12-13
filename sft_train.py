@@ -36,34 +36,29 @@ from trl import (
     get_peft_config,
 )
 
-def convert_to_messages(example):
-    return {
-        "messages": [
-            {"role": "user", "content": example["input"] + example["instruction"]},
-            {"role": "assistant", "content": example["output"]}
-        ]
-    }
+def convert_to_messages(example):       # Specific version to work with medalpaca
+    """
+    Maps 'instruction', 'input', 'output' to the standard messages format.
+    Handles cases where instruction might be empty.
+    """
+    # 1. Extract content safely
+    instruction = example.get("instruction", "")
+    user_content = example.get("input", "")
+    assistant_content = example.get("output", "")
+    
+    # 2. Build the messages list
+    messages = []
+    
+    # Add System Prompt (Critical for setting behavior)
+    # Even if it's generic, it tells the model "This is an instruction-following task"
+    if instruction:
+        messages.append({"role": "system", "content": instruction})
+    
+    # Add User/Assistant turns
+    messages.append({"role": "user", "content": user_content})
+    messages.append({"role": "assistant", "content": assistant_content})
 
-model_path = "/users/sgoel/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
-
-tokenizer = AutoTokenizer.from_pretrained(
-    model_path, # Use the direct local path
-    local_files_only=True, # Keep this, it reinforces offline mode
-    trust_remote_code=True
-)
-
-# Ensure the tokenizer has a pad token (common issue with Llama 3)
-tokenizer.pad_token = tokenizer.eos_token
-
-def apply_chat_template(example):
-    # tokenize=False creates the string string with special tokens (<s>, [INST], etc.)
-    # add_generation_prompt=False ensures we include the Assistant's response in the string for training
-    formatted_text = tokenizer.apply_chat_template(
-        example["messages"], 
-        tokenize=False, 
-        add_generation_prompt=False
-    )
-    return {"text": formatted_text}
+    return {"messages": messages}
 
 
 def main(script_args, training_args, model_args):
@@ -99,13 +94,16 @@ def main(script_args, training_args, model_args):
     print(f">>> DEBUG: Loading Dataset {script_args.dataset_name}...", flush=True)
     dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
     if(script_args.dataset_name != "HuggingFaceH4/Multilingual-Thinking"):
-            dataset = dataset.map(convert_to_messages)
-            print("converted into messages")
-            dataset = dataset.map(apply_chat_template)
-            print("converted into chat template")
-            # --- DEBUGGING: INSPECT THE RESULT ---
-            print("=== FINAL TRAINING INPUT ===")
-            print(dataset['train'][0]["text"], flush=True)
+        column_names = dataset[script_args.dataset_train_split].column_names    
+        dataset = dataset.map(
+            convert_to_messages,
+            remove_columns=column_names, # IMPORTANT: Remove old columns
+            desc="Formatting dataset"
+        )
+        print(f">>> DEBUG: Format complete. Columns are now: {dataset[script_args.dataset_train_split].column_names}", flush=True)
+        print(f"\n>>> DEBUG: Verify Data Format (First Example):", flush=True)
+        print(dataset[script_args.dataset_train_split][0]["messages"], flush=True)
+        print("-" * 50, flush=True)
 
     print(">>> DEBUG: Dataset loaded.", flush=True)
 
