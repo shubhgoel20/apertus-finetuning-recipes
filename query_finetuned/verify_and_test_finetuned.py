@@ -195,7 +195,7 @@ try:
     print(f">>> Starting Evaluation...", flush=True)
 
     # Select range (e.g., first 50 examples)
-    eval_subset = ds.shuffle(seed=42).select(range(10))
+    eval_subset = ds.shuffle(seed=42).select(range(1000))
     
     for i, ex in enumerate(eval_subset):
          # Debug Printing
@@ -265,7 +265,7 @@ try:
             print(">> RESULT: PARSE ERROR (Model failed to generate valid format)", flush=True)
 
         # Periodic logging
-        if (i + 1) % 5 == 0:
+        if (i + 1) % 10 == 0:
             print(f"\n--- Progress: {i+1}/{len(eval_subset)} ---")
             print(f"Current Accuracy: {correct/total:.2%}")
             sys.stdout.flush()
@@ -276,7 +276,7 @@ try:
     print(f"Final Accuracy: {correct/total:.4f}")
 
     print("\n" + "=" * 80)
-    print("✅ VERIFICATION COMPLETE - MODEL IS WORKING!")
+    print(" VERIFICATION COMPLETE - MODEL IS WORKING!")
     print("=" * 80)
     print("\nYour fine-tuned model has been successfully verified and tested.")
     print(f"You can load it using:")
@@ -286,7 +286,7 @@ try:
     sys.stdout.flush()
     
 except Exception as e:
-    print(f"\n❌ ERROR during model loading or inference:")
+    print(f"\n ERROR during model loading or inference:")
     print(f"  {type(e).__name__}: {e}")
     import traceback
     traceback.print_exc()
