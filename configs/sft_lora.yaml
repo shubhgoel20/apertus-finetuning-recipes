@@ -1,0 +1,46 @@
+# Model
+model_name_or_path: /users/mmeciani/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586
+attn_implementation:  flash_attention_2    # Changed here to make it work on Clariden
+dtype: bfloat16
+
+# Dataset
+dataset_name: /users/mmeciani/scratch/apertus-project/huggingface_cache/json_datasets/my_train.jsonl
+dataset_num_proc: 12
+
+# Hyperparameters
+learning_rate: 5.0e-5  # Reduced from 2e-4 to prevent overfitting
+gradient_checkpointing: true
+num_train_epochs: 3.0  # Reduced from 3.0 to prevent overfitting
+logging_steps: 1
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 16
+
+# Evaluation & Early Stopping
+eval_strategy: steps
+eval_steps: 15  # Evaluate every 25 steps
+per_device_eval_batch_size: 1
+save_strategy: steps
+save_steps: 15
+save_total_limit: 5  # Keep only best 3 checkpoints
+load_best_model_at_end: true
+metric_for_best_model: eval_loss
+greater_is_better: false
+
+# LoRA / PEFT
+use_peft: true
+lora_r: 8
+lora_alpha: 16
+lora_dropout: 0.1
+lora_target_modules: all-linear
+
+# Seq length & scheduler
+max_length: 4096
+warmup_ratio: 0.1
+lr_scheduler_type: cosine_with_min_lr
+lr_scheduler_kwargs:
+  min_lr_rate: 0.1
+
+# Output & logging
+output_dir: /users/mmeciani/scratch/apertus-project/output
+report_to: "none" 
+seed: 42
