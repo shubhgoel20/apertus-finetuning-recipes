@@ -22,7 +22,7 @@ def write_training_yaml(
         "dtype": "bfloat16",
 
         # Dataset
-        "dataset_name": "/users/ddixit/scratch/apertus-project/huggingface_cache/json_datasets/my_train.jsonl",
+        "dataset_name": "/users/ddixit/scratch/apertus-project/apertus-finetuning-recipes/json_datasets/my_train.jsonl",
         "dataset_num_proc": 12,
 
         # Hyperparameters
