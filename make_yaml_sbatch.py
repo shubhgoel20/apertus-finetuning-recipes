@@ -104,11 +104,11 @@ find "$TRITON_CACHE_DIR" -name "*.lock" -mmin +60 -delete 2>/dev/null || true
 find "$TORCH_EXTENSIONS_DIR" -name "*.lock" -mmin +60 -delete 2>/dev/null || true
 find "$HF_HOME" -name "*.lock" -mmin +60 -delete 2>/dev/null || true
 
-cleanup() {{
+cleanup() {
     echo "Cleaning up processes..."
     pkill -P $$ 2>/dev/null || true
     srun --overlap bash -c "pkill -u $USER python; pkill -u $USER accelerate" 2>/dev/null || true
-}}
+}
 trap cleanup EXIT SIGTERM SIGINT
 
 export HF_DATASETS_OFFLINE=1
