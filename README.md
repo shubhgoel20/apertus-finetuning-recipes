@@ -2,40 +2,69 @@
 
 This guide outlines the steps to set up the environment, install dependencies, prepare datasets, and run experiments (Zero-shot, LoRA, and Fine-tuning).
 
-## 1. Environment Setup
+## Directory Structure to recreate inside the cluster
+```
+apertus-project/
+├─ .venv/
+├─ apertus-finetuning-recipes/
+│  ├─ configs/
+│  ├─ query/
+│  └─ query_finetuned/
+├─ output/
+├─ huggingface_cache/
+└─ triton-cache/
+```
 
-Initialize the PyTorch environment and create a virtual environment with system site packages enabled.
+## Steps to Set-Up
+
+### 1. Clone and Import Finetuning Recipes
+- Place `apertus-finetuning-recipes` inside `apertus-project`.
+- Replace all paths placeholders with real paths: submit_lora.sbatch, sft_train.py, .yaml file, ...
+
+### 2. Configure Output Directory
+- Create `output/` in `apertus-project`.
+- Update YAML config paths inside `apertus-finetuning-recipes/configs` to point to this directory.
+
+### 3. Environment Setup on Login Node
+- Pull PyTorch uenv image and start session.
 
 ```bash
-# Start the specific uenv environment
+uenv image pull pytorch/v2.6.0:v1
 uenv start pytorch/v2.6.0:v1 --view=default
+```
 
-# Create virtual environment
+- Create and activate a virtual environment:
+
+```python
+// Create venv (only once)
 python -m venv .venv --system-site-packages
 
-# Activate the environment
+// Activate venv (every session)
 source .venv/bin/activate
 ```
 
-## 2. Package installation
-
-Install the required packages and xIELU
-
+### 4. Install Required Packages
 ```bash
-# Install XIELU without build isolation
-pip install --no-build-isolation git+[https://github.com/nickjbrowning/XIELU](https://github.com/nickjbrowning/XIELU)
-
-# Install remaining requirements
+pip install --upgrade pip
+pip install --no-build-isolation git+https://github.com/nickjbrowning/XIELU
 pip install -r requirements.txt
 ```
 
-## 3. Dataset setup
+### 5. Configure Hugging Face Cache
+```bash
+export HF_HOME="/users/mmeciani/scratch/apertus-project/huggingface_cache"
+```
 
-Install the dataset in the HF cache and format it with ```format_data.py```
+### 6. Download Apertus Model (within .venv)
+```bash
+huggingface-cli download swiss-ai/Apertus-8B-Instruct-2509 --cache-dir $HF_HOME --exclude "*.msgpack" "*.h5" "*.ot"
+
+
+### 7. Dataset setup
+
+Install the dataset in the HF cache.
 
 ```bash
-# Set cache directory
-export HF_HOME="/users/ddixit/scratch/apertus-project/huggingface_cache"
 
 # Download MMLU
 huggingface-cli download cais/mmlu \
@@ -52,6 +81,22 @@ python prepare_data.py
 
 #
 ```
-## 4. Running experiment
 
-Submit the sbatch files in the /query /query_finetuned and main folder
+### 8. Querying the Model
+- Submit job using the sbatch script located in `apertus-finetuning-recipes/query`.
+- Ensure the model path in `query.py` points to  
+  `HF_HOME/.../config.json` inside the downloaded Apertus folder.
+
+### 9. Performing LoRA Finetuning
+- Double check all paths and evnironment variables/packages
+- Submit job using the sbatch script located in `apertus-finetuning-recipes`.
+- Check results in the `output` folder
+
+### 10. Querying the Fine-Tuned Model
+- Head to `query_finetuned`
+- Here a series of infos about the Fine-Tuned model will be displayed as well as a series of test prompts
+- Submit the test using `submit_verify.sbatch`
+
+
+  
+
