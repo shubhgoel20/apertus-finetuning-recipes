@@ -28,7 +28,7 @@ from trl import (
 # ------------------------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------------------------
-os.environ["HF_HOME"] = "/users/mmeciani/scratch/apertus-project/huggingface_cache"
+os.environ["HF_HOME"] = "/users/ddixit/scratch/apertus-project/huggingface_cache"
 
 
 def convert_to_messages(example):

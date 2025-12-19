@@ -163,7 +163,7 @@ import sys
 if __name__ == "__main__":
 
 
-    learning_rates = [5e-5]
+    learning_rates = [1e-5, 1e-4]
     num_train_epochs_list = [2.0, 3.0]
     lora_ranks = [8, 16, 32]
     dropouts = [0.1]
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     script_dir = "/users/ddixit/scratch/apertus-project/apertus-finetuning-recipes/"
 
 
-    id = 0
+    id = 12
     for lr, epochs, r, d, w in product(
         learning_rates,
         num_train_epochs_list,

@@ -16,9 +16,9 @@ BATCH_SIZE = 4               # Process multiple examples at once
 QUICK_MODE = False            # If True, test only 3 tasks instead of 6
 
 # --- Configuration ---
-DATASET_PATH = "/users/mmeciani/scratch/apertus-project/huggingface_cache/datasets--cais--mmlu/snapshots/c30699e8356da336a370243923dbaf21066bb9fe"
-BASE_MODEL_PATH = "/users/mmeciani/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
-LORA_ADAPTER_PATH = "/users/mmeciani/scratch/apertus-project/output/checkpoint-60"
+DATASET_PATH = "/users/ddixit/scratch/apertus-project/huggingface_cache/datasets--cais--mmlu/snapshots/c30699e8356da336a370243923dbaf21066bb9fe"
+BASE_MODEL_PATH = "/users/ddixit/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
+LORA_ADAPTER_PATH = "/users/ddixit/scratch/apertus-project/output_0/checkpoint-48"    # NEED TO CHANGE THIS
 
 # MMLU Medical Subsets (SAME AS BASELINE!)
 if QUICK_MODE:

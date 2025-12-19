@@ -15,8 +15,8 @@ BATCH_SIZE = 4               # Process multiple examples at once
 QUICK_MODE = False            # If True, test only 3 tasks instead of 6
 
 # --- Configuration ---
-dataset_base_path = "/users/mmeciani/scratch/apertus-project/huggingface_cache/datasets--cais--mmlu/snapshots/c30699e8356da336a370243923dbaf21066bb9fe"
-model_path = "/users/mmeciani/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
+dataset_base_path = "/users/ddixit/scratch/apertus-project/huggingface_cache/datasets--cais--mmlu/snapshots/c30699e8356da336a370243923dbaf21066bb9fe"
+model_path = "/users/ddixit/scratch/apertus-project/huggingface_cache/models--swiss-ai--Apertus-8B-Instruct-2509/snapshots/cdb3e4f4ad41e0cc394bb92c302ac2eed57e9586"
 
 # MMLU Medical Subsets
 if QUICK_MODE:

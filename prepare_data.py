@@ -98,7 +98,7 @@ def main():
     # ===== Load MedMCQA =====
     print("\n>>> Loading MedMCQA...")
     medmcqa_dataset = load_dataset(
-        "/users/mmeciani/scratch/apertus-project/huggingface_cache/datasets--openlifescienceai--medmcqa/snapshots/91c6572c454088bf71b679ad90aa8dffcd0d5868",
+        "/users/ddixit/scratch/apertus-project/huggingface_cache/datasets--openlifescienceai--medmcqa/snapshots/91c6572c454088bf71b679ad90aa8dffcd0d5868",
         split="train"
     )
     medmcqa_dataset = medmcqa_dataset.shuffle(seed=42)
@@ -118,7 +118,7 @@ def main():
 
     # ===== Load MMLU Medical =====
     print("\n>>> Loading MMLU Medical Tasks...")
-    mmlu_base_path = "/users/mmeciani/scratch/apertus-project/huggingface_cache/datasets--cais--mmlu/snapshots/c30699e8356da336a370243923dbaf21066bb9fe"
+    mmlu_base_path = "/users/ddixit/scratch/apertus-project/huggingface_cache/datasets--cais--mmlu/snapshots/c30699e8356da336a370243923dbaf21066bb9fe"
 
     mmlu_tasks = [
         "clinical_knowledge",
@@ -139,7 +139,7 @@ def main():
                 if formatted:
                     mmlu_clean.append(formatted)
         except Exception as e:
-            print(f"  ⚠️  Failed to load {task}: {e}")
+            print(f"Failed to load {task}: {e}")
 
     print(f"✓ Collected {len(mmlu_clean)} MMLU examples from {len(mmlu_tasks)} tasks")
 

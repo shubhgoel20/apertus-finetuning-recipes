@@ -13,7 +13,7 @@
 #SBATCH --uenv=pytorch/v2.6.0:v1     # This loads your base PyTorch environment
 
 # Define project directory
-PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
+PROJECT_DIR="/users/ddixit/scratch/apertus-project"
 
 # Set environment variables for Hugging Face cache 
 export HF_HOME="$PROJECT_DIR/huggingface_cache"
@@ -36,7 +36,7 @@ echo "Python interpreter: $(which python)"
 echo "Running Python script..."
 
 # Run the inference script
-python "$PROJECT_DIR/apertus-finetuning-recipes-8B/query/test_zero_shot.py"
+python "$PROJECT_DIR/apertus-finetuning-recipes/query/test_zero_shot.py"
 
 echo "Python script finished."
 echo "Job ended at $(date)"

@@ -5,9 +5,9 @@
 
 # set +e
 # python make_yaml_sbatch.py
-ret=12
+ret=36
 
-for ((id = 0; id < ret; id++)); do
+for ((id = 12; id < ret; id++)); do
     mkdir -p "/users/ddixit/scratch/apertus-project/output_${id}"
     sbatch "/users/ddixit/scratch/apertus-project/apertus-finetuning-recipes/apertus_finetune_${id}.sbatch"
 done

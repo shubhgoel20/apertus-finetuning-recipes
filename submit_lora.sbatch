@@ -11,7 +11,7 @@
 #SBATCH --error=apertus_finetune_%j.err
 
 # --- 1. Environment & Paths ---
-PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
+PROJECT_DIR="/users/ddixit/scratch/apertus-project"
 export SLURM_CPU_BIND="none"
 
 # Cache locations
@@ -64,7 +64,7 @@ echo "Master IP:   $MASTER_ADDR"
 echo "Master Port: $MASTER_PORT"
 
 # --- 3. Launch Configuration ---
-CONFIG_FILE="$PROJECT_DIR/apertus-finetuning-recipes-8B/configs/zero3_multinode.yaml"       
+CONFIG_FILE="$PROJECT_DIR/apertus-finetuning-recipes/configs/zero3_multinode.yaml"       
 
 # Total GPUs = Nodes * GPUs per Node
 GPUS_PER_NODE=4
@@ -93,8 +93,8 @@ CMD="source $PROJECT_DIR/.venv/bin/activate && \
     --main_process_port $MASTER_PORT \
     --mixed_precision bf16 \
     --dynamo_backend no \
-    /users/mmeciani/scratch/apertus-project/apertus-finetuning-recipes-8B/sft_train.py \
-    --config configs/sft_lora.yaml \
+    /users/ddixit/scratch/apertus-project/apertus-finetuning-recipes/sft_train.py \
+    --config /users/ddixit/scratch/apertus-project/apertus-finetuning-recipes/configs/sft_lora.yaml \
     --ddp_timeout 5400" # Increased timeout for initial heavy loading
 
 # Launch

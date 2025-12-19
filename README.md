@@ -35,7 +35,7 @@ Install the dataset in the HF cache and format it with ```format_data.py```
 
 ```bash
 # Set cache directory
-export HF_HOME="/users/mmeciani/scratch/apertus-project/huggingface_cache"
+export HF_HOME="/users/ddixit/scratch/apertus-project/huggingface_cache"
 
 # Download MMLU
 huggingface-cli download cais/mmlu \

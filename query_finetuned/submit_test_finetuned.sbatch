@@ -1,19 +1,19 @@
 #!/bin/bash
-#SBATCH --job-name=verify_finetuned
+#SBATCH --job-name=verify_finetuned_0
 #SBATCH --account=large-sc-2
-#SBATCH --time=07:30:00
+#SBATCH --time=02:30:00
 #SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=12          # adjust based on cluster
 #SBATCH --mem=64G                   # total memory
-#SBATCH --output=finetuned_mixed_long_%j.log
-#SBATCH --error=finetuned_mixed_long_%j.err
+#SBATCH --output=finetuned_mixed_long_0.log
+#SBATCH --error=finetuned_mixed_long_0.err
 #SBATCH --uenv=pytorch/v2.6.0:v1     # This loads your base PyTorch environment
 
 # Set project directory
-PROJECT_DIR="/users/mmeciani/scratch/apertus-project"
+PROJECT_DIR="/users/ddixit/scratch/apertus-project"
 
 # Set environment variables for Hugging Face cache 
 export HF_HOME="$PROJECT_DIR/huggingface_cache"
@@ -35,7 +35,7 @@ echo "Python interpreter: $(which python)"
 echo "Running Python script..."
 
 # Run the inference script
-python "$PROJECT_DIR/apertus-finetuning-recipes-8B/query_finetuned/test_finetuned.py"
+python "$PROJECT_DIR/apertus-finetuning-recipes/query_finetuned/test_finetuned.py"
 
 echo "Python script finished."
 echo "Job ended at $(date)"
